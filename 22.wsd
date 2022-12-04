@@ -1,0 +1,92 @@
+@startuml
+
+
+
+
+class main{
+    
+}
+class CatmullRomSpline {
+    -__points
+    -__calcVal()
+    -__getValue()
+    +__init__(points: int[])
+    +getKeyPoints()
+    +plot()
+}
+
+interface ToolOperater{
+    -layer: Layer
+    -Drawer
+    
+    -size
+    -alpha
+    -color
+    -imagetabilization
+    
+    
+ -LButtonDown()
+ -LButtonUp()
+ -LButtonMove()
+ -RButtonDown()
+ -RButtonUp()
+ -RButtonMove()
+ 
+ -mouseMove()
+
+}
+
+class CVInput{
+    
+}
+
+interface Drawer{
+}
+
+interface LineData{
+    -Curve
+    -color
+    -thickness
+}
+
+interface InputHander{
+    -operator: ToolOperater
+    +callback
+    +setTool
+}
+
+interface SimplifyPoint{
+    
+}
+
+class PenTool{
+    
+}
+
+main o-- InputHander
+InputHander *-- ToolOperater 
+InputHander --|> CVInput
+ToolOperater *-- Layer
+ToolOperater --|> PenTool
+
+class LayerManager{
+    -Layers: Layer[]
+    
+    +getCurrentLayer()
+    
+}
+
+class Layer{
+    -img
+    -type
+    -color_mode
+    
+}
+
+class VectorLayer{
+    -LineData[]
+}
+
+
+@enduml
+
