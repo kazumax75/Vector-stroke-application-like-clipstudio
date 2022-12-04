@@ -38,6 +38,9 @@ class ILayer(metaclass=ABCMeta):
         self.img = None
 class ToolOperater(metaclass=ABCMeta):
     @abstractmethod
+    def __init__(self, canvas) -> None:
+        self.canvas = canvas
+    @abstractmethod
     def LButtonDown(self): pass
     @abstractmethod
     def LButtonUp(self): pass
@@ -53,26 +56,28 @@ class ToolOperater(metaclass=ABCMeta):
     def mouseMove(self):pass
     
 class Canvas:
-
-    def __createLayer(self):
-        img = np.zeros((self.height, self.width, 3), dtype=np.uint8)
-        img.fill(255)
-        
     def __init__(self, width, height) -> None:
         self.width  = width
         self.height = height
+        self.currentIdx = 0
         
-        self.guide_layer = self.__createLayer()
+        # self.guide_layer = self.__createLayer()
+        self.layer: ILayer = []
         
-        # 描画レイヤー作成。複数同時に作成も可
-        self.layer = []
         for i in range(1):
-            self.layer.append( self.__createLayer() )
-        
-        
-        
+            self.layer.append( VectorLayer(self.width, self.height) )
         
         pass
+    
+    def getMat(self):
+        # todo
+        return self.layer[0].img
+        
+    def getCurrentLayer(self):
+        return self.layer[self.currentIdx]
+    
+        
+    
     
 
 @dataclasses.dataclass
@@ -87,7 +92,6 @@ class VectorLayer(ILayer):
         self.img.fill(255)
         
         self.temp_img = self.img.copy()
-        
         self.Stroke = []
         
 
@@ -100,10 +104,10 @@ class VectorLayer(ILayer):
     def ベクター線の描画(self, pts, color, thickness):
         
         # 描画途中の線を消去した上で、改めてスプライン曲線を描画する。
-        self.img = self.temp_img.copy()
+        # self.img = self.temp_img.copy()
         
-        _cmr = EditableCatmullRomCurve(pts)
-        self.Stroke.append( Stroke(_cmr, color, thickness) )
+        # _cmr = EditableCatmullRomCurve(pts)
+        # self.Stroke.append( Stroke(_cmr, color, thickness) )
         
         # imgに実際に描画する
         
@@ -136,7 +140,8 @@ class VectorLayer(ILayer):
         
 
 class VectorPen(ToolOperater):
-    def __init__(self,) -> None:
+    def __init__(self, canvas) -> None:
+        super().__init__(canvas)
         self.prev_pt = (0,0)
         pass
     
@@ -144,14 +149,12 @@ class VectorPen(ToolOperater):
         return
     
     def LButtonDown(self, x, y):
-        global img
-        img[y, x] = (255,0,0)
+        self.canvas.getCurrentLayer().img[y, x] = (255,0,0)
         self.prev_pt = (x, y)
         return
         
     def LButtonMove(self, x, y):
-        global img
-        cv2.line(img,
+        cv2.line(self.canvas.getCurrentLayer().img,
             pt1=self.prev_pt,
             pt2=(x, y),
             color=(255, 0, 0),
@@ -169,123 +172,54 @@ class VectorPen(ToolOperater):
     def RButtonDown(self, x, y):pass
     def RButtonUp(self, x, y):pass
     def RButtonMove(self, x, y):pass
-    
-class CVInputManager:
-    def __init__(self, img, canvas: Canvas):
-        self.img = img
-        self.canvas = canvas
-        self.pt_list = []
+
+# class CVInput(InputHandler):
+class CVInput:
+    def __init__(self, tool):
+        # self.canvas: Canvas = canvas
+        self.tool: ToolOperater = tool
         self.lb_flag = False
         self.rb_flag = False
-        self.drag_point_idx = -1
-        self.prev_pt = (0,0)
-        self._points=[]
     
-    def mouseCallback(self, event, x, y, flags, param):
-        #########################################################################
-        ##  左クリック
-        #########################################################################
-        if event == cv2.EVENT_LBUTTONDOWN:
+    def callback(self, event, x, y, flags=None, param=None):
+        if event == cv2.EVENT_LBUTTONDOWN: 
             self.lb_flag = True
+            self.tool.LButtonDown(x, y)
             
-            self.img[y, x] = (0,0,255)
-            self.prev_pt = (x,y)
-            
-            self.pt_list.clear()
-            self.pt_list.append((x,y))
-            
-            
-            # self.canvas.clear()
-            
-            cv2.imshow('image', self.img)
-        elif event == cv2.EVENT_LBUTTONUP:
+        elif event == cv2.EVENT_LBUTTONUP and self.lb_flag :
             self.lb_flag = False
+            self.tool.LButtonUp(x, y)
             
-            contour = np.array(self.pt_list, dtype = np.int32)
-            
-            epsilon = 0.001 * cv2.arcLength(contour, False)
-            approx = cv2.approxPolyDP(contour, epsilon, False)
-            approx = np.squeeze(approx)
-            
-            for _x, _y in approx:
-                cv2.circle(self.img,
-                    center=(_x, _y),
-                    radius=2,
-                    color=(0, 255, 0),
-                    thickness=-1,
-                    lineType=cv2.LINE_4,
-                    shift=0)
-            
-            self._points = list(np.squeeze(approx))
-            
-            # cmr = CatmullRomSpline()
-            cmr.set(self._points)
-            
-            曲線を再描画する(self.img, cmr, 100)
-        #########################################################################
-        ##  右クリック
-        #########################################################################
         elif event == cv2.EVENT_RBUTTONDOWN:
             self.rb_flag = True
-            self.drag_point_idx = cmr.近くの制御点のインデックス取得( (x,y) )
+            self.tool.RButtonDown(x, y)
             
-        elif event == cv2.EVENT_RBUTTONUP:
+        elif event == cv2.EVENT_RBUTTONUP and self.rb_flag :
             self.rb_flag = False
-            self.drag_point_idx = -1
-        
+            self.tool.RButtonUp(x, y)
+            
         elif event == cv2.EVENT_MOUSEMOVE:
-            #########################################################################
-            ##  左ドラッグ中
-            #########################################################################
             if self.lb_flag:
-                self.pt_list.append((x,y))
-                
-                self.img[y, x] = (0,0,255)
-                cv2.line(self.img, self.prev_pt, (x, y), (0, 0, 0), 1, 16)
-                self.prev_pt = (x,y)
-                
-                pass
-            #########################################################################
-            ##  右ドラッグ中
-            #########################################################################
-            if self.rb_flag:
-                
-                if self.drag_point_idx > 0:
-                    ret = cmr.movePoint( self.drag_point_idx, (x,y) )
-                    曲線を再描画する(self.img, cmr, 100)
-                    pass
-                pass
-            #########################################################################
-            ##  ドラッグではなくマウスポインタ移動のみの時
-            #########################################################################
+                self.tool.LButtonMove(x,y)
+            elif self.rb_flag:
+                self.tool.RButtonMove(x,y)
             if self.lb_flag == False and self.rb_flag == False:
-                idx = cmr.近くの制御点のインデックス取得( (x,y) )
-            
-                if idx == -1: return
-                曲線を再描画する(self.img, cmr, 100)
-                cv2.circle(self.img, radius=6, center=(cmr.points[idx][0], cmr.points[idx][1]) ,color=(0, 255, 255),thickness=-1,lineType=cv2.LINE_4,shift=0)
-                pass
-            
-            pass  
-    
-    
-    
+                self.tool.mouseMove(x, y)
 
 
-img = np.zeros((800, 1080, 3), dtype=np.uint8)
-img.fill(255)
 
 canvas = Canvas(1080, 800)
-
-cmr = EditableCatmullRomCurve()
-ma = CVInputManager(img, canvas)
+tool = VectorPen( canvas )
+# ma = CVInput(canvas, tool)
+ma = CVInput(tool)
 
 cv2.namedWindow('image')
-cv2.setMouseCallback('image', ma.mouseCallback)
+cv2.setMouseCallback('image', ma.callback)
 
 
 while(1):
-    cv2.imshow('image', img)
+    # cv2.imshow('image', img)
+    cv2.imshow('image', canvas.getMat() )
     
     key = cv2.waitKey(1) & 0xFF
     if key == ord('c'):
@@ -294,3 +228,7 @@ while(1):
     elif key == ord('q'):
         break
     
+    
+# 線をつまんで編集できる、CLIPSTUDIOのベクターレイヤーを実装する
+
+# 
