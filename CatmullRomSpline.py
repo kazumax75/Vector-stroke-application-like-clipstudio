@@ -1,17 +1,12 @@
 import copy
-import cv2
 import numpy as np
 
 class CatmullRomSpline:
-    def __init__(self):
-        self.points = None
-
-    def set(self, pts):
+    def __init__(self, pts):
         _points = []
         _points = copy.deepcopy(pts)
         _points.insert(0,  pts[0])
         _points.insert(-1, pts[-1])
-        
         self.points = np.array(_points)
         
     def __calcVal(self, x0, x1, v0, v1, t):
