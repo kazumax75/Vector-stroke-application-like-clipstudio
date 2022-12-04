@@ -29,10 +29,33 @@ def 曲線を再描画する(img, cmr, div):
     for _p in cmr.plot(200):
         img[int(_p[1]), int(_p[0])] = (0,0,255)
     
+
+class Canvas:
+
+    def __createLayer(self):
+        img = np.zeros((self.height, self.width, 3), dtype=np.uint8)
+        img.fill(255)
+        
+    def __init__(self, width, height) -> None:
+        self.width  = width
+        self.height = height
+        
+        self.guide_layer = self.__createLayer()
+        
+        # 描画レイヤー作成。複数同時に作成も可
+        self.layer = []
+        for i in range(1):
+            self.layer.append( self.__createLayer() )
+        
+        
+        
+        
+        pass
     
 class CVInputManager:
-    def __init__(self, img):
+    def __init__(self, img, canvas: Canvas):
         self.img = img
+        self.canvas = canvas
         self.pt_list = []
         self.lb_flag = False
         self.rb_flag = False
@@ -52,6 +75,9 @@ class CVInputManager:
             
             self.pt_list.clear()
             self.pt_list.append((x,y))
+            
+            
+            # self.canvas.clear()
             
             cv2.imshow('image', self.img)
         elif event == cv2.EVENT_LBUTTONUP:
@@ -131,8 +157,10 @@ class CVInputManager:
 img = np.zeros((800, 1080, 3), dtype=np.uint8)
 img.fill(255)
 
+canvas = Canvas(1080, 800)
+
 cmr = EditableCatmullRomCurve()
-ma = CVInputManager(img)
+ma = CVInputManager(img, canvas)
 
 cv2.namedWindow('image')
 cv2.setMouseCallback('image', ma.mouseCallback)
