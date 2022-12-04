@@ -2,8 +2,11 @@ import itertools
 import cv2
 import numpy as np
 import copy
-
+from typing import List
 import CatmullRomSpline as cmr
+from typing import Tuple
+import dataclasses
+from abc import ABCMeta, abstractmethod
 
 class EditableCatmullRomCurve(cmr.CatmullRomSpline):
     def __init__(self) -> None:
@@ -29,7 +32,26 @@ def 曲線を再描画する(img, cmr, div):
     for _p in cmr.plot(200):
         img[int(_p[1]), int(_p[0])] = (0,0,255)
     
-
+class ILayer(metaclass=ABCMeta):
+    @abstractmethod
+    def __init__(self, width, height) -> None:
+        self.img = None
+class ToolOperater(metaclass=ABCMeta):
+    @abstractmethod
+    def LButtonDown(self): pass
+    @abstractmethod
+    def LButtonUp(self): pass
+    @abstractmethod
+    def LButtonMove(self):pass
+    @abstractmethod
+    def RButtonDown(self):pass
+    @abstractmethod
+    def RButtonUp(self):pass
+    @abstractmethod
+    def RButtonMove(self):pass
+    @abstractmethod
+    def mouseMove(self):pass
+    
 class Canvas:
 
     def __createLayer(self):
@@ -51,6 +73,102 @@ class Canvas:
         
         
         pass
+    
+
+@dataclasses.dataclass
+class Stroke:
+    # curves: List[EditableCatmullRomCurve]
+    curves: EditableCatmullRomCurve
+    color: Tuple[int, int, int]
+    thickness: int
+class VectorLayer(ILayer):
+    def __init__(self, width, height) -> None:
+        self.img = np.zeros((height, width, 3), dtype=np.uint8)
+        self.img.fill(255)
+        
+        self.temp_img = self.img.copy()
+        
+        self.Stroke = []
+        
+
+    
+    
+    def ベクター線の描画開始(self):
+        self.temp_img = self.img.copy()
+        
+        
+    def ベクター線の描画(self, pts, color, thickness):
+        
+        # 描画途中の線を消去した上で、改めてスプライン曲線を描画する。
+        self.img = self.temp_img.copy()
+        
+        _cmr = EditableCatmullRomCurve(pts)
+        self.Stroke.append( Stroke(_cmr, color, thickness) )
+        
+        # imgに実際に描画する
+        
+        # for _p in cmr.plot(200):
+            # self.img[int(_p[1]), int(_p[0])] = (0,0,255)
+            # cv2.circle(self.img,
+            #         center=(_x, _y),
+            #         radius=2,
+            #         color=(0, 255, 0),
+            #         thickness=-1,
+            #         lineType=cv2.LINE_4,
+            #         shift=0)
+            # cv2.line(self.img, self.prev_pt, (x, y), (0, 0, 0), 1, 16)
+        
+        return 
+        
+    def removeCurve(self, idx):
+        # self.Stroke.remove(idx)
+        del self.Stroke[idx]
+        return
+    
+# class StrokeManager:
+    
+#     def __init__(self) -> None:
+#         self.pt = []
+#         pass
+    
+#     def add(self, x, y):
+#         self.pt.append(  (x, y) )
+        
+
+class VectorPen(ToolOperater):
+    def __init__(self,) -> None:
+        self.prev_pt = (0,0)
+        pass
+    
+    def mouseMove(self, x, y):
+        return
+    
+    def LButtonDown(self, x, y):
+        global img
+        img[y, x] = (255,0,0)
+        self.prev_pt = (x, y)
+        return
+        
+    def LButtonMove(self, x, y):
+        global img
+        cv2.line(img,
+            pt1=self.prev_pt,
+            pt2=(x, y),
+            color=(255, 0, 0),
+            thickness=1,
+            lineType=cv2.LINE_4,
+            shift=0)
+        self.prev_pt = (x, y)
+        return
+
+    def LButtonUp(self, x, y):
+        print("pen lb Up")
+        
+        return
+
+    def RButtonDown(self, x, y):pass
+    def RButtonUp(self, x, y):pass
+    def RButtonMove(self, x, y):pass
     
 class CVInputManager:
     def __init__(self, img, canvas: Canvas):
