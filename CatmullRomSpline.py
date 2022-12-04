@@ -7,7 +7,6 @@ class CatmullRomSpline:
         self.points = None
 
     def set(self, pts):
-        # self.points.clear()
         _points = []
         _points = copy.deepcopy(pts)
         _points.insert(0,  pts[0])
