@@ -9,8 +9,8 @@ import dataclasses
 from abc import ABCMeta, abstractmethod
 
 class EditableCatmullRomCurve(cmr.CatmullRomSpline):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, pts) -> None:
+        super().__init__(pts)
     
     def movePoint(self, idx, pt):
         self.points[idx] = pt
@@ -104,7 +104,7 @@ class VectorLayer(ILayer):
     def ベクター線の描画(self, pts, color, thickness):
         
         # 描画途中の線を消去した上で、改めてスプライン曲線を描画する。
-        # self.img = self.temp_img.copy()
+        self.img = self.temp_img.copy()
         
         # _cmr = EditableCatmullRomCurve(pts)
         # self.Stroke.append( Stroke(_cmr, color, thickness) )
@@ -142,30 +142,65 @@ class VectorLayer(ILayer):
 class VectorPen(ToolOperater):
     def __init__(self, canvas) -> None:
         super().__init__(canvas)
-        self.prev_pt = (0,0)
+        # self.prev_pt = (0,0)
+        
+        self.color = (255, 0, 0)
+        self.thickness = 1
+        
+        self.points = []
+        
+        
         pass
     
     def mouseMove(self, x, y):
         return
     
     def LButtonDown(self, x, y):
-        self.canvas.getCurrentLayer().img[y, x] = (255,0,0)
-        self.prev_pt = (x, y)
+        self.canvas.getCurrentLayer().img[y, x] = (0,255,0)
+        # self.prev_pt = (x, y)
+        self.points.append((x, y))
+        
+        # self.canvas.getCurrentLayer().ベクター線の描画開始()
         return
         
     def LButtonMove(self, x, y):
         cv2.line(self.canvas.getCurrentLayer().img,
-            pt1=self.prev_pt,
+            pt1=self.points[-1],
             pt2=(x, y),
-            color=(255, 0, 0),
-            thickness=1,
+            color=self.color,
+            thickness=self.thickness,
             lineType=cv2.LINE_4,
             shift=0)
-        self.prev_pt = (x, y)
+        
+        # self.prev_pt = (x, y)
+        self.points.append((x, y))
         return
 
     def LButtonUp(self, x, y):
+        
+        
         print("pen lb Up")
+        
+        # self.canvas.getCurrentLayer().ベクター線の描画()
+        
+        cmr = EditableCatmullRomCurve(self.points)
+        # self.Stroke.append( Stroke(_cmr, color, thickness) )
+        
+        # imgに実際に描画する
+        
+        for _p in cmr.plot(200):
+            _x, _y = int(_p[0]), int(_p[1])
+            self.canvas.getCurrentLayer().img[_y, _x] = (0,0,255)
+            # cv2.circle(self.img,
+            #         center=(_x, _y),
+            #         radius=2,
+            #         color=(0, 255, 0),
+            #         thickness=-1,
+            #         lineType=cv2.LINE_4,
+            #         shift=0)
+            # cv2.line(self.img, self.prev_pt, (x, y), (0, 0, 0), 1, 16)
+        
+        self.points.clear()
         
         return
 
