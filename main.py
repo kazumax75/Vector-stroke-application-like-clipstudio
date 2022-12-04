@@ -94,14 +94,15 @@ class VectorLayer(ILayer):
         self.temp_img = self.img.copy()
         self.Stroke = []
         
-
+    
+    # def addCurve(self, )
     
     
     def ベクター線の描画開始(self):
         self.temp_img = self.img.copy()
         
         
-    def ベクター線の描画(self, pts, color, thickness):
+    def ベクター線の描画(self):
         
         # 描画途中の線を消去した上で、改めてスプライン曲線を描画する。
         self.img = self.temp_img.copy()
@@ -142,25 +143,49 @@ class VectorLayer(ILayer):
 class VectorPen(ToolOperater):
     def __init__(self, canvas) -> None:
         super().__init__(canvas)
-        # self.prev_pt = (0,0)
         
-        self.color = (255, 0, 0)
+        self.color = (23, 115, 255)
         self.thickness = 1
         
         self.points = []
         
-        
         pass
+    
+    def setColor(self, color):
+        self.color = color
+        
+    def setThickness(self, thickness):
+        self.thickness = thickness
+        
+    # def 近くの制御点のインデックス取得(self, pt):
+    #     if self.points is None: return -1
+        
+    #     for i, points in enumerate(self.points[1:-1]):
+    #         distance = np.linalg.norm( np.array(pt) - points )
+    #         # print(i, distance)
+    #         if distance <= 10:
+    #             return i + 1
+    #     return -1
     
     def mouseMove(self, x, y):
         return
     
     def LButtonDown(self, x, y):
-        self.canvas.getCurrentLayer().img[y, x] = (0,255,0)
+        # self.canvas.getCurrentLayer().img[y, x] = (0,255,0)
+        
+        cv2.circle(self.canvas.getCurrentLayer().img,
+            center=(x, y),
+            radius=1 ,
+            color=self.color,
+            thickness=-1,
+            lineType=cv2.LINE_4,
+            shift=0)
+
+
         # self.prev_pt = (x, y)
         self.points.append((x, y))
         
-        # self.canvas.getCurrentLayer().ベクター線の描画開始()
+        self.canvas.getCurrentLayer().ベクター線の描画開始()
         return
         
     def LButtonMove(self, x, y):
@@ -169,7 +194,7 @@ class VectorPen(ToolOperater):
             pt2=(x, y),
             color=self.color,
             thickness=self.thickness,
-            lineType=cv2.LINE_4,
+            lineType=cv2.LINE_AA,
             shift=0)
         
         # self.prev_pt = (x, y)
@@ -181,16 +206,23 @@ class VectorPen(ToolOperater):
         
         print("pen lb Up")
         
-        # self.canvas.getCurrentLayer().ベクター線の描画()
+        self.canvas.getCurrentLayer().ベクター線の描画()
         
-        cmr = EditableCatmullRomCurve(self.points)
+        curve = cmr.CatmullRomSpline(self.points)
         # self.Stroke.append( Stroke(_cmr, color, thickness) )
         
         # imgに実際に描画する
         
-        for _p in cmr.plot(200):
+        # for _p in curve.plot(100):
+
+        px = py = 0
+        for i, _p in enumerate(curve.plot(1), 0):
+            if i == 0:
+                px, py = int(_p[0]), int(_p[1])
+                continue
+            print(i)
             _x, _y = int(_p[0]), int(_p[1])
-            self.canvas.getCurrentLayer().img[_y, _x] = (0,0,255)
+            # self.canvas.getCurrentLayer().img[_y, _x] = (0,0,255)
             # cv2.circle(self.img,
             #         center=(_x, _y),
             #         radius=2,
@@ -198,7 +230,18 @@ class VectorPen(ToolOperater):
             #         thickness=-1,
             #         lineType=cv2.LINE_4,
             #         shift=0)
-            # cv2.line(self.img, self.prev_pt, (x, y), (0, 0, 0), 1, 16)
+            cv2.line(
+                self.canvas.getCurrentLayer().img , 
+                (px, py), 
+                (_x, _y), 
+                self.color, 
+                thickness=self.thickness, 
+                lineType=cv2.LINE_AA
+            )
+            px, py = int(_p[0]), int(_p[1])
+            
+            
+        # debug 制御点表示    
         
         self.points.clear()
         
