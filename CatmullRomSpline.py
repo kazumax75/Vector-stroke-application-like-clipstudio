@@ -29,7 +29,7 @@ class CatmullRomSpline:
         )
     
     def getKeyPoints(self):
-        return self.points[1,-1]
+        return self.points[1:-1, :]
         
     def plot(self, div): #補完した座標を返すジェネレータ
         length = len(self.points) - 2 - 1
@@ -38,3 +38,5 @@ class CatmullRomSpline:
                 _p = self.__getValue(i, j / div)
                 yield _p
                 
+        # 最後の制御点を返す
+        yield (self.points[-1])
