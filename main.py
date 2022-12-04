@@ -29,137 +29,10 @@ def 曲線を再描画する(img, cmr, div):
     for _p in cmr.plot(200):
         img[int(_p[1]), int(_p[0])] = (0,0,255)
     
-
-class LineManager:
-    
-    def __init__(self) -> None:
-        self.curves = []
-        
-        pass
-    
-    
-    def addLine(self, rawPoints):
-        
-        _keyPoints = self.__入力点を間引く(rawPoints)
-        
-        _curve = EditableCatmullRomCurve(_keyPoints)    
-        self.curves.append(_curve)
-        
-        return 
-    
-    def __入力点を間引く(self, rawPoints):
-        contour = np.array(rawPoints, dtype=np.int32)
-            
-        epsilon = 0.001 * cv2.arcLength(contour, False)
-        approx = cv2.approxPolyDP(contour, epsilon, False)
-        approx = np.squeeze(approx)
-
-        return list(np.squeeze(approx))
-        
-    
-        
-    def 制御点へマウスオーバー(self, x, y):
-        
-        
-        for _curve in self.curves:
-            
-            idx = _curve.近くの制御点のインデックス取得( (x,y) )
-            
-            if idx == -1: continue
-            
-            # drawPoint
-            
-            
-        
-        return 
-        
-    def drawCurve(self, idx):
-        
-        img.fill(255)
-        for _p in self.curves[idx].plot(200):
-            img[int(_p[1]), int(_p[0])] = (0,0,255)
-            
-        for _p in self.curves[idx].getKeyPoints():
-            
-        
-        
-        return 
-        
-    def 再描画(self):
-        
-        
-    
-        return 
-    pass
-    
-class Canvas:
-    def __init__(self, width, height) -> None:
-        self.img = np.zeros((height, width, 3), dtype=np.uint8)
-        self.img.fill(255)
-        
-        pass
-    
-    def drawPoint(self, pt, color):
-        # cv2.circle(
-        #     self.img, 
-        #     radius=2, 
-        #     center=pt,
-        #     color=color,
-        #     thickness=-1,
-        #     lineType=cv2.LINE_4,
-        #     shift=0
-        # )
-        
-        
-        return 
-        
-    def drawActivePoint(self, pt, color=(0,0,255)):
-        radius = 6
-        cv2.circle(
-            self.img, 
-            radius=6, 
-            center=pt,
-            color=color,
-            thickness=-1,
-            lineType=cv2.LINE_4,
-            shift=0
-        )
-        cv2.circle(
-            self.img, 
-            radius=radius, 
-            center=pt,
-            color=(0,0,0),
-            thickness=1,
-            lineType=cv2.LINE_4,
-            shift=0
-        )
-        
-        return 
-        
-    def drawKeyPoint(self, pt, color=(0,255,0) ):
-        radius = 6
-        cv2.circle(
-            self.img, 
-            radius=radius, 
-            center=pt,
-            color=color,
-            thickness=-1,
-            lineType=cv2.LINE_4,
-            shift=0
-        )
-        cv2.circle(
-            self.img, 
-            radius=radius, 
-            center=pt,
-            color=(0,0,0),
-            thickness=1,
-            lineType=cv2.LINE_4,
-            shift=0
-        )
-        return 
     
 class CVInputManager:
-    def __init__(self):
+    def __init__(self, img):
+        self.img = img
         self.pt_list = []
         self.lb_flag = False
         self.rb_flag = False
@@ -174,13 +47,13 @@ class CVInputManager:
         if event == cv2.EVENT_LBUTTONDOWN:
             self.lb_flag = True
             
-            img[y, x] = (0,0,255)
+            self.img[y, x] = (0,0,255)
             self.prev_pt = (x,y)
             
             self.pt_list.clear()
             self.pt_list.append((x,y))
             
-            cv2.imshow('image', img)
+            cv2.imshow('image', self.img)
         elif event == cv2.EVENT_LBUTTONUP:
             self.lb_flag = False
             
@@ -191,7 +64,7 @@ class CVInputManager:
             approx = np.squeeze(approx)
             
             for _x, _y in approx:
-                cv2.circle(img,
+                cv2.circle(self.img,
                     center=(_x, _y),
                     radius=2,
                     color=(0, 255, 0),
@@ -204,7 +77,7 @@ class CVInputManager:
             # cmr = CatmullRomSpline()
             cmr.set(self._points)
             
-            曲線を再描画する(img, cmr, 100)
+            曲線を再描画する(self.img, cmr, 100)
         #########################################################################
         ##  右クリック
         #########################################################################
@@ -223,8 +96,8 @@ class CVInputManager:
             if self.lb_flag:
                 self.pt_list.append((x,y))
                 
-                img[y, x] = (0,0,255)
-                cv2.line(img, self.prev_pt, (x, y), (0, 0, 0), 1, 16)
+                self.img[y, x] = (0,0,255)
+                cv2.line(self.img, self.prev_pt, (x, y), (0, 0, 0), 1, 16)
                 self.prev_pt = (x,y)
                 
                 pass
@@ -235,7 +108,7 @@ class CVInputManager:
                 
                 if self.drag_point_idx > 0:
                     ret = cmr.movePoint( self.drag_point_idx, (x,y) )
-                    曲線を再描画する(img, cmr, 100)
+                    曲線を再描画する(self.img, cmr, 100)
                     pass
                 pass
             #########################################################################
@@ -245,24 +118,25 @@ class CVInputManager:
                 idx = cmr.近くの制御点のインデックス取得( (x,y) )
             
                 if idx == -1: return
-                曲線を再描画する(img, cmr, 100)
-                cv2.circle(img, radius=6, center=(cmr.points[idx][0], cmr.points[idx][1]) ,color=(0, 255, 255),thickness=-1,lineType=cv2.LINE_4,shift=0)
+                曲線を再描画する(self.img, cmr, 100)
+                cv2.circle(self.img, radius=6, center=(cmr.points[idx][0], cmr.points[idx][1]) ,color=(0, 255, 255),thickness=-1,lineType=cv2.LINE_4,shift=0)
                 pass
-            
             
             pass  
     
     
     
 
+
+img = np.zeros((800, 1080, 3), dtype=np.uint8)
+img.fill(255)
+
 cmr = EditableCatmullRomCurve()
-ma = CVInputManager()
+ma = CVInputManager(img)
 
 cv2.namedWindow('image')
 cv2.setMouseCallback('image', ma.mouseCallback)
 
-img = np.zeros((800, 1080, 3), dtype=np.uint8)
-img.fill(255)
 
 while(1):
     cv2.imshow('image', img)
