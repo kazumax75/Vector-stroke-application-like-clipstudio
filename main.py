@@ -103,28 +103,10 @@ class VectorLayer(ILayer):
         
         
     def ベクター線の描画(self):
-        
         # 描画途中の線を消去した上で、改めてスプライン曲線を描画する。
         self.img = self.temp_img.copy()
-        
-        # _cmr = EditableCatmullRomCurve(pts)
-        # self.Stroke.append( Stroke(_cmr, color, thickness) )
-        
-        # imgに実際に描画する
-        
-        # for _p in cmr.plot(200):
-            # self.img[int(_p[1]), int(_p[0])] = (0,0,255)
-            # cv2.circle(self.img,
-            #         center=(_x, _y),
-            #         radius=2,
-            #         color=(0, 255, 0),
-            #         thickness=-1,
-            #         lineType=cv2.LINE_4,
-            #         shift=0)
-            # cv2.line(self.img, self.prev_pt, (x, y), (0, 0, 0), 1, 16)
-        
         return 
-        
+    
     def removeCurve(self, idx):
         # self.Stroke.remove(idx)
         del self.Stroke[idx]
@@ -223,7 +205,7 @@ class VectorPen(ToolOperater):
         
         contour = np.array(self.points, dtype = np.int32)
         
-        epsilon = 0.001 * cv2.arcLength(contour, False)
+        epsilon = 0.0008 * cv2.arcLength(contour, False)
         approx = cv2.approxPolyDP(contour, epsilon, False)
         approx = np.squeeze(approx)
         
@@ -272,7 +254,10 @@ class VectorPen(ToolOperater):
             
             
         # debug 制御点表示
-        for pt in curve.getKeyPoints():cv2.circle(self.canvas.getCurrentLayer().img,center=(pt[0], pt[1]),radius=3,color=(0, 0, 0),thickness=1,lineType=cv2.LINE_4,shift=0)
+        # for pt in curve.getKeyPoints():cv2.circle(self.canvas.getCurrentLayer().img,center=(pt[0], pt[1]),radius=3,color=(0, 0, 0),thickness=1,lineType=cv2.LINE_4,shift=0)
+        
+        
+        self.canvas.getCurrentLayer().Stroke.append( Stroke(curve, self.color, self.thickness) )
         
         self.points.clear()
         
