@@ -290,7 +290,7 @@ class CVInput:
         self.lb_flag = False
         self.rb_flag = False
     
-    def callback(self, event, x, y, flags=None, param=None):
+    def mouseCallback(self, event, x, y, flags=None, param=None):
         if event == cv2.EVENT_LBUTTONDOWN: 
             self.lb_flag = True
             self.tool.LButtonDown(x, y)
@@ -315,6 +315,14 @@ class CVInput:
             if self.lb_flag == False and self.rb_flag == False:
                 self.tool.mouseMove(x, y)
 
+    def keyInput(self, ):
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('c'):
+            pass
+            
+        elif key == ord('q'):
+            cv2.destroyAllWindows()
+            exit()
 
 
 canvas = Canvas(1080, 800)
@@ -323,20 +331,14 @@ tool = VectorPen( canvas )
 ma = CVInput(tool)
 
 cv2.namedWindow('image')
-cv2.setMouseCallback('image', ma.callback)
+cv2.setMouseCallback('image', ma.mouseCallback)
 
 
 while(1):
     # cv2.imshow('image', img)
     cv2.imshow('image', canvas.getMat() )
     
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord('c'):
-        pass
-        
-    elif key == ord('q'):
-        break
-    
+    ma.keyInput()
     
 # 線をつまんで編集できる、CLIPSTUDIOのベクターレイヤーを実装する
 
