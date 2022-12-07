@@ -92,7 +92,7 @@ class VectorLayer(ILayer):
         self.img.fill(255)
         
         self.temp_img = self.img.copy()
-        self.Stroke = []
+        self.stroke = []
         
     
     # def addCurve(self, )
@@ -108,8 +108,8 @@ class VectorLayer(ILayer):
         return 
     
     def removeCurve(self, idx):
-        # self.Stroke.remove(idx)
-        del self.Stroke[idx]
+        # self.stroke.remove(idx)
+        del self.stroke[idx]
         return
     
 # class StrokeManager:
@@ -218,7 +218,7 @@ class VectorPen(ToolOperater):
         curve = cmr.CatmullRomSpline(approx.tolist())
         # print("a", curve.getKeyPoints()[1:-1, :])
         print("a", curve.getKeyPoints())
-        # self.Stroke.append( Stroke(_cmr, color, thickness) )
+        # self.stroke.append( Stroke(_cmr, color, thickness) )
         
         # imgに実際に描画する
         
@@ -257,7 +257,7 @@ class VectorPen(ToolOperater):
         # for pt in curve.getKeyPoints():cv2.circle(self.canvas.getCurrentLayer().img,center=(pt[0], pt[1]),radius=3,color=(0, 0, 0),thickness=1,lineType=cv2.LINE_4,shift=0)
         
         
-        self.canvas.getCurrentLayer().Stroke.append( Stroke(curve, self.color, self.thickness) )
+        self.canvas.getCurrentLayer().stroke.append( Stroke(curve, self.color, self.thickness) )
         
         self.points.clear()
         
