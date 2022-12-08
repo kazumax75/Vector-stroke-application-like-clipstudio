@@ -107,8 +107,11 @@ class VectorLayer(ILayer):
         self.stroke.append(stroke)
         
         for pt in stroke.curve.getKeyPoints():
+            print("pt", pt)
             _x = int(pt[0] / 10)
             _y = int(pt[1] / 10)
+            
+            print(_x, _y)
             
             self.map[_x][_y].append(
                 PointMap( len(self.stroke)-1, pt )
@@ -116,6 +119,28 @@ class VectorLayer(ILayer):
             
             
         
+        
+        return
+    def 入力座標近くの制御点とカーブを取得(self, x, y):
+        _x = int(x / 10)
+        _y = int(y / 10)
+        
+        for map_point in self.map[_x][_y]:
+            
+            distance = np.linalg.norm( np.array((x, y)) - np.array(map_point.points) )
+            if distance <= 10:
+                print(map_point)
+                
+                return
+        
+        
+        # for i, points in enumerate(self.points[1:-1]):
+        #     distance = np.linalg.norm( np.array(pt) - points )
+        #     # print(i, distance)
+        #     if distance <= 10:
+        #         # print("match!!", i+1)
+        #         return i + 1
+        # return -1
         
         return 
         
@@ -131,6 +156,8 @@ class VectorLayer(ILayer):
             
             
             pass
+        
+        
         
         # for i, points in enumerate(self.points[1:-1]):
         #     distance = np.linalg.norm( np.array(pt) - points )
@@ -265,7 +292,7 @@ class VectorPen(ToolOperater):
             
             
         # debug 制御点表示
-        # for pt in curve.getKeyPoints():cv2.circle(self.canvas.getCurrentLayer().img,center=(pt[0], pt[1]),radius=3,color=(0, 0, 0),thickness=1,lineType=cv2.LINE_4,shift=0)
+        for pt in curve.getKeyPoints():cv2.circle(self.canvas.getCurrentLayer().img,center=(pt[0], pt[1]),radius=3,color=(0, 0, 0),thickness=1,lineType=cv2.LINE_4,shift=0)
         
         
         # self.canvas.getCurrentLayer().stroke.append( Stroke(curve, self.color, self.thickness) )
@@ -275,9 +302,15 @@ class VectorPen(ToolOperater):
         
         return
 
-    def RButtonDown(self, x, y):pass
+    def RButtonDown(self, x, y):
+        self.canvas.getCurrentLayer().入力座標近くの制御点とカーブを取得(x, y)
+
+        pass
     def RButtonUp(self, x, y):pass
-    def RButtonMove(self, x, y):pass
+    def RButtonMove(self, x, y):
+        
+        
+        pass
 
 # class CVInput(InputHandler):
 class CVInput:
