@@ -17,15 +17,7 @@ class EditableCatmullRomCurve(cmr.CatmullRomSpline):
         return self.points[idx]
         
         
-    def 近くの制御点のインデックス取得(self, pt):
-        if self.points is None: return -1
-        
-        for i, points in enumerate(self.points[1:-1]):
-            distance = np.linalg.norm( np.array(pt) - points )
-            # print(i, distance)
-            if distance <= 10:
-                return i + 1
-        return -1
+    
     
 def 曲線を再描画する(img, cmr, div):
     img.fill(255)
@@ -111,6 +103,19 @@ class VectorLayer(ILayer):
         # self.stroke.remove(idx)
         del self.stroke[idx]
         return
+        
+    def 近くの制御点のインデックス取得(self, pt):
+        if not self.stroke: return -1
+        
+        for i, st in enumerate(self.stroke):
+            pass
+        
+        # for i, points in enumerate(self.points[1:-1]):
+        #     distance = np.linalg.norm( np.array(pt) - points )
+        #     # print(i, distance)
+        #     if distance <= 10:
+        #         return i + 1
+        # return -1
     
 # class StrokeManager:
     
@@ -196,38 +201,21 @@ class VectorPen(ToolOperater):
         
         self.canvas.getCurrentLayer().ベクター線の描画()
         
-        
         # self.points[2] = (self.points[2][0]+50, self.points[2][0] - 12)
         
-        
-        
         # 間引きする
-        
         contour = np.array(self.points, dtype = np.int32)
         
         epsilon = 0.0008 * cv2.arcLength(contour, False)
         approx = cv2.approxPolyDP(contour, epsilon, False)
         approx = np.squeeze(approx, 1)
-        # print(approx)
-        # newpt = list(np.squeeze(approx))
-        # print("newpt", approx.tolist()  )
         
-        
-        
-        # curve = cmr.CatmullRomSpline(self.points)
         curve = cmr.CatmullRomSpline(approx.tolist())
         curve.getKeyPoints()
-        # print("a", curve.getKeyPoints()[1:-1, :])
-        # print("a", curve.getKeyPoints())
-        # self.stroke.append( Stroke(_cmr, color, thickness) )
         
-        # imgに実際に描画する
-        
-        # for _p in curve.plot(100):
-
         px = py = 0
         for i, _p in enumerate(curve.plot(1), 0):
-            print(int(_p[0]), int(_p[1]))
+            # print(int(_p[0]), int(_p[1]))
             if i == 0:
                 px, py = int(_p[0]), int(_p[1])
                 continue

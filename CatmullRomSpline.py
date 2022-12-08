@@ -8,6 +8,7 @@ class CatmullRomSpline:
         _points.insert(0,  pts[0])
         _points.insert(-1, pts[-1])
         self.points = np.array(_points)
+        # print(self.points)
         
     def __calcVal(self, x0, x1, v0, v1, t):
         return (2.0 * x0 - 2.0 * x1 + v0 + v1) * t**3 + (-3.0 * x0 + 3.0 * x1 - 2.0 * v0 - v1) * t**2 + v0 * t + x0
