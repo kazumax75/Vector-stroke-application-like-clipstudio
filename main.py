@@ -207,17 +207,18 @@ class VectorPen(ToolOperater):
         
         epsilon = 0.0008 * cv2.arcLength(contour, False)
         approx = cv2.approxPolyDP(contour, epsilon, False)
-        approx = np.squeeze(approx)
-        
+        approx = np.squeeze(approx, 1)
+        # print(approx)
         # newpt = list(np.squeeze(approx))
-        print("newpt", approx.tolist()  )
+        # print("newpt", approx.tolist()  )
         
         
         
         # curve = cmr.CatmullRomSpline(self.points)
         curve = cmr.CatmullRomSpline(approx.tolist())
+        curve.getKeyPoints()
         # print("a", curve.getKeyPoints()[1:-1, :])
-        print("a", curve.getKeyPoints())
+        # print("a", curve.getKeyPoints())
         # self.stroke.append( Stroke(_cmr, color, thickness) )
         
         # imgに実際に描画する
