@@ -1,4 +1,5 @@
 import itertools
+import math
 import cv2
 import numpy as np
 import copy
@@ -7,22 +8,6 @@ import CatmullRomSpline as cmr
 from typing import Tuple
 import dataclasses
 from abc import ABCMeta, abstractmethod
-
-class EditableCatmullRomCurve(cmr.CatmullRomSpline):
-    def __init__(self, pts) -> None:
-        super().__init__(pts)
-    
-    def movePoint(self, idx, pt):
-        self.points[idx] = pt
-        return self.points[idx]
-        
-        
-    
-    
-def 曲線を再描画する(img, cmr, div):
-    img.fill(255)
-    for _p in cmr.plot(200):
-        img[int(_p[1]), int(_p[0])] = (0,0,255)
     
 class ILayer(metaclass=ABCMeta):
     @abstractmethod
@@ -74,10 +59,15 @@ class Canvas:
 
 @dataclasses.dataclass
 class Stroke:
-    # curves: List[EditableCatmullRomCurve]
-    curves: EditableCatmullRomCurve
+    curve: cmr.CatmullRomSpline
     color: Tuple[int, int, int]
     thickness: int
+    
+@dataclasses.dataclass
+class PointMap:
+    curve_index: int
+    points: List[Tuple[int, int]]
+    
 class VectorLayer(ILayer):
     def __init__(self, width, height) -> None:
         self.img = np.zeros((height, width, 3), dtype=np.uint8)
@@ -86,6 +76,19 @@ class VectorLayer(ILayer):
         self.temp_img = self.img.copy()
         self.stroke = []
         
+        
+        rows = math.ceil(width / 10)
+        cols = math.ceil(height / 10)
+        
+        print(rows, cols)
+
+        self.map = [[ [] for j in range(cols)] for i in range(rows)]
+        
+        print("w", len(self.map))
+        print("h", len(self.map[0]))
+        # self.map[2][3] = 99
+        # print("mamp",self.map)
+        # print(  )
     
     # def addCurve(self, )
     
@@ -99,6 +102,23 @@ class VectorLayer(ILayer):
         self.img = self.temp_img.copy()
         return 
     
+    def カーブを追加(self, stroke):
+        # Stroke(curve, self.color, self.thickness)
+        self.stroke.append(stroke)
+        
+        for pt in stroke.curve.getKeyPoints():
+            _x = int(pt[0] / 10)
+            _y = int(pt[1] / 10)
+            
+            self.map[_x][_y].append(
+                PointMap( len(self.stroke)-1, pt )
+            )
+            
+            
+        
+        
+        return 
+        
     def removeCurve(self, idx):
         # self.stroke.remove(idx)
         del self.stroke[idx]
@@ -108,6 +128,8 @@ class VectorLayer(ILayer):
         if not self.stroke: return -1
         
         for i, st in enumerate(self.stroke):
+            
+            
             pass
         
         # for i, points in enumerate(self.points[1:-1]):
@@ -246,7 +268,8 @@ class VectorPen(ToolOperater):
         # for pt in curve.getKeyPoints():cv2.circle(self.canvas.getCurrentLayer().img,center=(pt[0], pt[1]),radius=3,color=(0, 0, 0),thickness=1,lineType=cv2.LINE_4,shift=0)
         
         
-        self.canvas.getCurrentLayer().stroke.append( Stroke(curve, self.color, self.thickness) )
+        # self.canvas.getCurrentLayer().stroke.append( Stroke(curve, self.color, self.thickness) )
+        self.canvas.getCurrentLayer().カーブを追加( Stroke(curve, self.color, self.thickness) )
         
         self.points.clear()
         
