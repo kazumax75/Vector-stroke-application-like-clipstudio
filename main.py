@@ -67,18 +67,15 @@ class VectorLayer(ILayer):
     def __init__(self, width, height) -> None:
         self.img = np.zeros((height, width, 3), dtype=np.uint8)
         self.img.fill(255)
-        
         self.temp_img = self.img.copy()
         self.prev_img = self.img.copy()
         self.stroke = []
-        
         
         rows = width
         cols = height
         self.map = [[ [] for j in range(cols)] for i in range(rows)]
         
         self.selected_key_point = None
-        
         print("w", len(self.map))
         print("h", len(self.map[0]))
     
@@ -89,9 +86,7 @@ class VectorLayer(ILayer):
         self.img = self.temp_img.copy()
     
     def カーブを追加(self, stroke):
-        # Stroke(curve, self.color, self.thickness)
         self.stroke.append(stroke)
-        
         for pt in stroke.curve.getKeyPoints():
             self.map[pt[0]][pt[1]].append( PointMap( len(self.stroke)-1, pt)  )
             
@@ -104,6 +99,7 @@ class VectorLayer(ILayer):
                 distance = np.linalg.norm( np.array(pt) - np.array((x,y)) )
                 if distance <= 10:
                     self.線の描画前のイメージに戻す()
+                    self.制御点を表示する()
                     self.selected_key_point = [i, j]
                     
                     # print(self.selected_key_point)
@@ -115,6 +111,7 @@ class VectorLayer(ILayer):
                     
                     return 
         self.線の描画前のイメージに戻す()
+        self.制御点を表示する()
         self.selected_key_point = None
         
         return 
@@ -122,17 +119,16 @@ class VectorLayer(ILayer):
         if not self.selected_key_point: return 
         if self.selected_key_point is None: return 
         
+        # todo 最初、末尾の点は、別途処理がいる
+
         self.stroke[self.selected_key_point[0]].curve.points[self.selected_key_point[1] + 1] = [x, y]
         
     def removeCurve(self, idx):
-        # self.stroke.remove(idx)
         del self.stroke[idx]
         return
         
     def 全ストローク再描画(self, div=100):
-        # print("全ストローク再描画")
         self.img.fill(255)
-        
         for st in self.stroke:
             
             for i, _p in enumerate(st.curve.plot(div), 0):
@@ -141,7 +137,6 @@ class VectorLayer(ILayer):
                     continue
                 
                 _x, _y = int(_p[0]), int(_p[1])
-                
                 cv2.line(
                     self.img , 
                     (px, py), 
@@ -149,10 +144,23 @@ class VectorLayer(ILayer):
                     st.color,
                     # (255,0,0),
                     thickness=st.thickness, 
-                    lineType=cv2.LINE_AA
-                )
+                    lineType=cv2.LINE_AA)
                 px, py = int(_p[0]), int(_p[1])
-        # self.現在のイメージを記録する()
+        self.制御点を表示する()
+        
+    def 制御点を表示する(self):
+        
+        for st in self.stroke:
+            for pt in st.curve.getKeyPoints():
+                cv2.circle(
+                    self.img,
+                    center=(pt[0], pt[1]),
+                    radius=3,
+                    color=(0, 0, 0),
+                    thickness=1,
+                    lineType=cv2.LINE_4,
+                    shift=0
+                )
 
 class VectorPen(ToolOperater):
     def __init__(self, canvas) -> None:
@@ -160,11 +168,8 @@ class VectorPen(ToolOperater):
         
         self.color = (23, 115, 255)
         self.thickness = 1
-        
         self.points = []
-        self.selectable_key_point = False
-        
-        pass
+        self.selectable_key_point = True
     
     def setColor(self, color):
         self.color = color
@@ -179,8 +184,6 @@ class VectorPen(ToolOperater):
         return
     
     def LButtonDown(self, x, y):
-        # self.canvas.getCurrentLayer().img[y, x] = (0,255,0)
-        
         cv2.circle(self.canvas.getCurrentLayer().img,
             center=(x, y),
             radius=1 ,
@@ -188,12 +191,9 @@ class VectorPen(ToolOperater):
             thickness=-1,
             lineType=cv2.LINE_4,
             shift=0)
-
-
-        # self.prev_pt = (x, y)
+            
         self.points.append((x, y))
         
-        # self.canvas.getCurrentLayer().現在のイメージを記録する()
         return
         
     def LButtonMove(self, x, y):
@@ -204,8 +204,7 @@ class VectorPen(ToolOperater):
             thickness=self.thickness,
             lineType=cv2.LINE_AA,
             shift=0)
-        
-        # self.prev_pt = (x, y)
+            
         self.points.append((x, y))
         return
 
@@ -228,7 +227,7 @@ class VectorPen(ToolOperater):
         # 間引きする
         contour = np.array(self.points, dtype = np.int32)
         
-        epsilon = 0.0013 * cv2.arcLength(contour, False)
+        epsilon = 0.0018 * cv2.arcLength(contour, False)
         # epsilon = 0.0008 * cv2.arcLength(contour, False)
         approx = cv2.approxPolyDP(contour, epsilon, False)
         approx = np.squeeze(approx, 1)
@@ -255,12 +254,13 @@ class VectorPen(ToolOperater):
             
             
         self.canvas.getCurrentLayer().現在のイメージを記録する()
-        # debug 制御点表示
-        for pt in curve.getKeyPoints():cv2.circle(self.canvas.getCurrentLayer().img,center=(pt[0], pt[1]),radius=3,color=(0, 0, 0),thickness=1,lineType=cv2.LINE_4,shift=0)
+        # # debug 制御点表示
+        # for pt in curve.getKeyPoints():cv2.circle(self.canvas.getCurrentLayer().img,center=(pt[0], pt[1]),radius=3,color=(0, 0, 0),thickness=1,lineType=cv2.LINE_4,shift=0)
         
         
         # self.canvas.getCurrentLayer().stroke.append( Stroke(curve, self.color, self.thickness) )
         self.canvas.getCurrentLayer().カーブを追加( Stroke(curve, self.color, self.thickness) )
+        self.canvas.getCurrentLayer().制御点を表示する()
         
         self.points.clear()
         
@@ -312,6 +312,9 @@ class CVInput:
         self.rb_flag = False
     
     def mouseCallback(self, event, x, y, flags=None, param=None):
+        if not 0 <= x < self.tool.canvas.width  : return 
+        if not 0 <= y < self.tool.canvas.height : return 
+            
         if event == cv2.EVENT_LBUTTONDOWN: 
             self.lb_flag = True
             self.tool.LButtonDown(x, y)
