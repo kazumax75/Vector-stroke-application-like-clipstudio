@@ -51,10 +51,6 @@ class Canvas:
         
     def getCurrentLayer(self):
         return self.layer[self.currentIdx]
-    
-        
-    
-    
 
 @dataclasses.dataclass
 class Stroke:
@@ -79,21 +75,18 @@ class VectorLayer(ILayer):
         
         rows = width
         cols = height
-
         self.map = [[ [] for j in range(cols)] for i in range(rows)]
+        
+        self.selected_key_point = None
         
         print("w", len(self.map))
         print("h", len(self.map[0]))
     
-    
     def 現在のイメージを記録する(self):
         self.temp_img = self.img.copy()
         
-        
     def 線の描画前のイメージに戻す(self):
-        # 描画途中の線を消去した上で、改めてスプライン曲線を描画する。
         self.img = self.temp_img.copy()
-        return 
     
     def カーブを追加(self, stroke):
         # Stroke(curve, self.color, self.thickness)
@@ -102,25 +95,18 @@ class VectorLayer(ILayer):
         for pt in stroke.curve.getKeyPoints():
             self.map[pt[0]][pt[1]].append( PointMap( len(self.stroke)-1, pt)  )
             
-            
-            # print("pt", pt)
-            # _x = int(pt[0] / 10)
-            # _y = int(pt[1] / 10)
-            
-            # print(_x, _y)
-            
-            # self.map[_x][_y].append(
-            #     PointMap( len(self.stroke)-1, pt )
-            # )
         return
         
     def 入力座標近くの制御点とカーブを取得(self, x, y):
         
-        for st in self.stroke:
-            for pt in st.curve.getKeyPoints():
+        for i, st in enumerate(self.stroke):
+            for j, pt in enumerate(st.curve.getKeyPoints()):
                 distance = np.linalg.norm( np.array(pt) - np.array((x,y)) )
                 if distance <= 10:
-                    print(x,y )
+                    self.線の描画前のイメージに戻す()
+                    self.selected_key_point = [i, j]
+                    
+                    # print(self.selected_key_point)
                     
                     cv2.circle(
                         self.img,
@@ -129,50 +115,44 @@ class VectorLayer(ILayer):
                     
                     return 
         self.線の描画前のイメージに戻す()
-                    
-        
-        
-        # for i, points in enumerate(self.points[1:-1]):
-        #     distance = np.linalg.norm( np.array(pt) - points )
-        #     # print(i, distance)
-        #     if distance <= 10:
-        #         # print("match!!", i+1)
-        #         return i + 1
-        # return -1
+        self.selected_key_point = None
         
         return 
+    def 選択中のカーブ制御点を移動する(self, x, y):
+        if not self.selected_key_point: return 
+        if self.selected_key_point is None: return 
+        
+        self.stroke[self.selected_key_point[0]].curve.points[self.selected_key_point[1] + 1] = [x, y]
         
     def removeCurve(self, idx):
         # self.stroke.remove(idx)
         del self.stroke[idx]
         return
         
-    def 近くの制御点のインデックス取得(self, pt):
-        if not self.stroke: return -1
+    def 全ストローク再描画(self):
+        # print("全ストローク再描画")
+        self.img.fill(255)
         
-        for i, st in enumerate(self.stroke):
+        for st in self.stroke:
             
-            
-            pass
-        
-        
-        
-        # for i, points in enumerate(self.points[1:-1]):
-        #     distance = np.linalg.norm( np.array(pt) - points )
-        #     # print(i, distance)
-        #     if distance <= 10:
-        #         return i + 1
-        # return -1
-    
-# class StrokeManager:
-    
-#     def __init__(self) -> None:
-#         self.pt = []
-#         pass
-    
-#     def add(self, x, y):
-#         self.pt.append(  (x, y) )
-        
+            for i, _p in enumerate(st.curve.plot(100), 0):
+                if i == 0:
+                    px, py = int(_p[0]), int(_p[1])
+                    continue
+                
+                _x, _y = int(_p[0]), int(_p[1])
+                
+                cv2.line(
+                    self.img , 
+                    (px, py), 
+                    (_x, _y), 
+                    st.color,
+                    # (255,0,0),
+                    thickness=st.thickness, 
+                    lineType=cv2.LINE_AA
+                )
+                px, py = int(_p[0]), int(_p[1])
+        # self.現在のイメージを記録する()
 
 class VectorPen(ToolOperater):
     def __init__(self, canvas) -> None:
@@ -192,16 +172,6 @@ class VectorPen(ToolOperater):
     def setThickness(self, thickness):
         self.thickness = thickness
         
-    # def 近くの制御点のインデックス取得(self, pt):
-    #     if self.points is None: return -1
-        
-    #     for i, points in enumerate(self.points[1:-1]):
-    #         distance = np.linalg.norm( np.array(pt) - points )
-    #         # print(i, distance)
-    #         if distance <= 10:
-    #             return i + 1
-    #     return -1
-    
     def mouseMove(self, x, y):
         if not self.selectable_key_point: return
         
@@ -270,21 +240,11 @@ class VectorPen(ToolOperater):
         curve.getKeyPoints()
         
         px = py = 0
-        for i, _p in enumerate(curve.plot(2), 0):
-            # print(int(_p[0]), int(_p[1]))
+        for i, _p in enumerate(curve.plot(1), 0):
             if i == 0:
                 px, py = int(_p[0]), int(_p[1])
                 continue
-            # print(i)
             _x, _y = int(_p[0]), int(_p[1])
-            # self.canvas.getCurrentLayer().img[_y, _x] = (0,0,255)
-            # cv2.circle(self.img,
-            #         center=(_x, _y),
-            #         radius=2,
-            #         color=(0, 255, 0),
-            #         thickness=-1,
-            #         lineType=cv2.LINE_4,
-            #         shift=0)
             cv2.line(
                 self.canvas.getCurrentLayer().img , 
                 (px, py), 
@@ -308,16 +268,27 @@ class VectorPen(ToolOperater):
         self.points.clear()
         
         return
-
+        
+    
     def RButtonDown(self, x, y):
-        self.canvas.getCurrentLayer().入力座標近くの制御点とカーブを取得(x, y)
+        # self.canvas.getCurrentLayer().線の描画前のイメージに戻す()
+        # self.canvas.getCurrentLayer().選択中のカーブ制御点を移動する(x, y)
+        # self.canvas.getCurrentLayer().全ストローク再描画()
 
         pass
-    def RButtonUp(self, x, y):pass
+    
     def RButtonMove(self, x, y):
-        
+        # self.canvas.getCurrentLayer().線の描画前のイメージに戻す()
+        self.canvas.getCurrentLayer().選択中のカーブ制御点を移動する(x, y)
+        self.canvas.getCurrentLayer().全ストローク再描画()
         
         pass
+    def RButtonUp(self, x, y):
+        self.canvas.getCurrentLayer().全ストローク再描画()
+        self.canvas.getCurrentLayer().現在のイメージを記録する()
+        
+        pass
+    
     
     def keyInput(self, key):
         if key == ord('c'):
@@ -325,6 +296,11 @@ class VectorPen(ToolOperater):
             
             print("bole", self.selectable_key_point)
             pass
+        elif key == ord('w'):
+            
+            self.canvas.getCurrentLayer().全ストローク再描画()
+            pass
+        
         elif key == ord('q'):
             pass
         
@@ -378,7 +354,6 @@ class CVInput:
 
 canvas = Canvas(1080, 800)
 tool = VectorPen( canvas )
-# ma = CVInput(canvas, tool)
 ma = CVInput(tool)
 
 cv2.namedWindow('image')
