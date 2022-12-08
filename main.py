@@ -129,13 +129,13 @@ class VectorLayer(ILayer):
         del self.stroke[idx]
         return
         
-    def 全ストローク再描画(self):
+    def 全ストローク再描画(self, div=100):
         # print("全ストローク再描画")
         self.img.fill(255)
         
         for st in self.stroke:
             
-            for i, _p in enumerate(st.curve.plot(100), 0):
+            for i, _p in enumerate(st.curve.plot(div), 0):
                 if i == 0:
                     px, py = int(_p[0]), int(_p[1])
                     continue
@@ -176,9 +176,6 @@ class VectorPen(ToolOperater):
         if not self.selectable_key_point: return
         
         self.canvas.getCurrentLayer().入力座標近くの制御点とカーブを取得(x, y)
-        
-        
-        
         return
     
     def LButtonDown(self, x, y):
@@ -240,7 +237,7 @@ class VectorPen(ToolOperater):
         curve.getKeyPoints()
         
         px = py = 0
-        for i, _p in enumerate(curve.plot(1), 0):
+        for i, _p in enumerate(curve.plot(100), 0):
             if i == 0:
                 px, py = int(_p[0]), int(_p[1])
                 continue
@@ -280,7 +277,7 @@ class VectorPen(ToolOperater):
     def RButtonMove(self, x, y):
         # self.canvas.getCurrentLayer().線の描画前のイメージに戻す()
         self.canvas.getCurrentLayer().選択中のカーブ制御点を移動する(x, y)
-        self.canvas.getCurrentLayer().全ストローク再描画()
+        self.canvas.getCurrentLayer().全ストローク再描画(div=7)
         
         pass
     def RButtonUp(self, x, y):
