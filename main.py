@@ -1,4 +1,3 @@
-import itertools
 import math
 import cv2
 import numpy as np
@@ -74,30 +73,24 @@ class VectorLayer(ILayer):
         self.img.fill(255)
         
         self.temp_img = self.img.copy()
+        self.prev_img = self.img.copy()
         self.stroke = []
         
         
-        rows = math.ceil(width / 10)
-        cols = math.ceil(height / 10)
-        
-        print(rows, cols)
+        rows = width
+        cols = height
 
         self.map = [[ [] for j in range(cols)] for i in range(rows)]
         
         print("w", len(self.map))
         print("h", len(self.map[0]))
-        # self.map[2][3] = 99
-        # print("mamp",self.map)
-        # print(  )
-    
-    # def addCurve(self, )
     
     
-    def ベクター線の描画開始(self):
+    def 現在のイメージを記録する(self):
         self.temp_img = self.img.copy()
         
         
-    def ベクター線の描画(self):
+    def 線の描画前のイメージに戻す(self):
         # 描画途中の線を消去した上で、改めてスプライン曲線を描画する。
         self.img = self.temp_img.copy()
         return 
@@ -107,31 +100,36 @@ class VectorLayer(ILayer):
         self.stroke.append(stroke)
         
         for pt in stroke.curve.getKeyPoints():
-            print("pt", pt)
-            _x = int(pt[0] / 10)
-            _y = int(pt[1] / 10)
-            
-            print(_x, _y)
-            
-            self.map[_x][_y].append(
-                PointMap( len(self.stroke)-1, pt )
-            )
+            self.map[pt[0]][pt[1]].append( PointMap( len(self.stroke)-1, pt)  )
             
             
-        
-        
+            # print("pt", pt)
+            # _x = int(pt[0] / 10)
+            # _y = int(pt[1] / 10)
+            
+            # print(_x, _y)
+            
+            # self.map[_x][_y].append(
+            #     PointMap( len(self.stroke)-1, pt )
+            # )
         return
-    def 入力座標近くの制御点とカーブを取得(self, x, y):
-        _x = int(x / 10)
-        _y = int(y / 10)
         
-        for map_point in self.map[_x][_y]:
-            
-            distance = np.linalg.norm( np.array((x, y)) - np.array(map_point.points) )
-            if distance <= 10:
-                print(map_point)
-                
-                return
+    def 入力座標近くの制御点とカーブを取得(self, x, y):
+        
+        for st in self.stroke:
+            for pt in st.curve.getKeyPoints():
+                distance = np.linalg.norm( np.array(pt) - np.array((x,y)) )
+                if distance <= 10:
+                    print(x,y )
+                    
+                    cv2.circle(
+                        self.img,
+                        center=(pt[0], pt[1]),
+                        radius=5,color=(0, 0, 0),thickness=-1,lineType=cv2.LINE_4,shift=0)
+                    
+                    return 
+        self.線の描画前のイメージに戻す()
+                    
         
         
         # for i, points in enumerate(self.points[1:-1]):
@@ -184,6 +182,7 @@ class VectorPen(ToolOperater):
         self.thickness = 1
         
         self.points = []
+        self.selectable_key_point = False
         
         pass
     
@@ -204,6 +203,12 @@ class VectorPen(ToolOperater):
     #     return -1
     
     def mouseMove(self, x, y):
+        if not self.selectable_key_point: return
+        
+        self.canvas.getCurrentLayer().入力座標近くの制御点とカーブを取得(x, y)
+        
+        
+        
         return
     
     def LButtonDown(self, x, y):
@@ -221,7 +226,7 @@ class VectorPen(ToolOperater):
         # self.prev_pt = (x, y)
         self.points.append((x, y))
         
-        self.canvas.getCurrentLayer().ベクター線の描画開始()
+        # self.canvas.getCurrentLayer().現在のイメージを記録する()
         return
         
     def LButtonMove(self, x, y):
@@ -248,14 +253,16 @@ class VectorPen(ToolOperater):
         self.points.append((x, y))
         print("pen lb Up")
         
-        self.canvas.getCurrentLayer().ベクター線の描画()
+        # 直前の画像に戻す。未確定の線を消した上でカーブの描画を行うため
+        self.canvas.getCurrentLayer().線の描画前のイメージに戻す()
         
         # self.points[2] = (self.points[2][0]+50, self.points[2][0] - 12)
         
         # 間引きする
         contour = np.array(self.points, dtype = np.int32)
         
-        epsilon = 0.0008 * cv2.arcLength(contour, False)
+        epsilon = 0.0013 * cv2.arcLength(contour, False)
+        # epsilon = 0.0008 * cv2.arcLength(contour, False)
         approx = cv2.approxPolyDP(contour, epsilon, False)
         approx = np.squeeze(approx, 1)
         
@@ -263,7 +270,7 @@ class VectorPen(ToolOperater):
         curve.getKeyPoints()
         
         px = py = 0
-        for i, _p in enumerate(curve.plot(1), 0):
+        for i, _p in enumerate(curve.plot(2), 0):
             # print(int(_p[0]), int(_p[1]))
             if i == 0:
                 px, py = int(_p[0]), int(_p[1])
@@ -290,7 +297,7 @@ class VectorPen(ToolOperater):
             px, py = int(_p[0]), int(_p[1])
             
             
-            
+        self.canvas.getCurrentLayer().現在のイメージを記録する()
         # debug 制御点表示
         for pt in curve.getKeyPoints():cv2.circle(self.canvas.getCurrentLayer().img,center=(pt[0], pt[1]),radius=3,color=(0, 0, 0),thickness=1,lineType=cv2.LINE_4,shift=0)
         
@@ -311,6 +318,17 @@ class VectorPen(ToolOperater):
         
         
         pass
+    
+    def keyInput(self, key):
+        if key == ord('c'):
+            self.selectable_key_point = not self.selectable_key_point
+            
+            print("bole", self.selectable_key_point)
+            pass
+        elif key == ord('q'):
+            pass
+        
+        
 
 # class CVInput(InputHandler):
 class CVInput:
@@ -347,6 +365,9 @@ class CVInput:
 
     def keyInput(self, ):
         key = cv2.waitKey(1) & 0xFF
+        
+        self.tool.keyInput(key)
+        
         if key == ord('c'):
             pass
             
