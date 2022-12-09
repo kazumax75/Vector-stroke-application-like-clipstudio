@@ -36,17 +36,16 @@ class Canvas:
         self.width  = width
         self.height = height
         self.currentIdx = 0
-        
-        # self.guide_layer = self.__createLayer()
         self.layer: ILayer = []
         
+        # debug 現状1枚のベクタレイヤのみ取り扱う
         for i in range(1):
             self.layer.append( VectorLayer(self.width, self.height) )
         
         pass
     
-    def getMat(self):
-        # todo
+    def getImg(self):
+        # debug 1枚目のレイヤの画像のみ返してる
         return self.layer[0].img
         
     def getCurrentLayer(self):
@@ -119,9 +118,7 @@ class VectorLayer(ILayer):
         if not self.selected_key_point: return 
         if self.selected_key_point is None: return 
         
-        # todo 最初、末尾の点は、別途処理がいる
-
-        self.stroke[self.selected_key_point[0]].curve.points[self.selected_key_point[1] + 1] = [x, y]
+        self.stroke[self.selected_key_point[0]].curve.moveKeyPoint(self.selected_key_point[1], x, y)
         
     def removeCurve(self, idx):
         del self.stroke[idx]
@@ -144,7 +141,7 @@ class VectorLayer(ILayer):
                     st.color,
                     # (255,0,0),
                     thickness=st.thickness, 
-                    lineType=cv2.LINE_AA)
+                    lineType=cv2.LINE_8)
                 px, py = int(_p[0]), int(_p[1])
         self.制御点を表示する()
         
@@ -202,7 +199,7 @@ class VectorPen(ToolOperater):
             pt2=(x, y),
             color=self.color,
             thickness=self.thickness,
-            lineType=cv2.LINE_AA,
+            lineType=cv2.LINE_8,
             shift=0)
             
         self.points.append((x, y))
@@ -214,10 +211,9 @@ class VectorPen(ToolOperater):
             pt2=(x, y),
             color=self.color,
             thickness=self.thickness,
-            lineType=cv2.LINE_AA,
+            lineType=cv2.LINE_8,
             shift=0)
         self.points.append((x, y))
-        print("pen lb Up")
         
         # 直前の画像に戻す。未確定の線を消した上でカーブの描画を行うため
         self.canvas.getCurrentLayer().線の描画前のイメージに戻す()
@@ -248,7 +244,7 @@ class VectorPen(ToolOperater):
                 self.color, 
                 # (255,9,0),
                 thickness=self.thickness, 
-                lineType=cv2.LINE_AA
+                lineType=cv2.LINE_8
             )
             px, py = int(_p[0]), int(_p[1])
             
@@ -291,7 +287,7 @@ class VectorPen(ToolOperater):
         if key == ord('c'):
             self.selectable_key_point = not self.selectable_key_point
             
-            print("bole", self.selectable_key_point)
+            print("input c:", self.selectable_key_point)
             pass
         elif key == ord('w'):
             
@@ -306,7 +302,6 @@ class VectorPen(ToolOperater):
 # class CVInput(InputHandler):
 class CVInput:
     def __init__(self, tool):
-        # self.canvas: Canvas = canvas
         self.tool: ToolOperater = tool
         self.lb_flag = False
         self.rb_flag = False
@@ -352,6 +347,8 @@ class CVInput:
             exit()
 
 
+color = (0,0,255)
+thickness = 1
 canvas = Canvas(1080, 800)
 tool = VectorPen( canvas )
 ma = CVInput(tool)
@@ -359,11 +356,28 @@ ma = CVInput(tool)
 cv2.namedWindow('image')
 cv2.setMouseCallback('image', ma.mouseCallback)
 
+def nothing(x):
+    pass
+cv2.namedWindow('Pen Parameter', cv2.WINDOW_NORMAL)
+cv2.createTrackbar('R', 'Pen Parameter', color[2], 255, nothing)
+cv2.createTrackbar('G', 'Pen Parameter', color[1], 255, nothing)
+cv2.createTrackbar('B', 'Pen Parameter', color[0], 255, nothing)
+cv2.createTrackbar('Thickness', 'Pen Parameter', thickness, 20, nothing)
 
 while(1):
-    # cv2.imshow('image', img)
-    cv2.imshow('image', canvas.getMat() )
     
+    # トラックバーの値をペンにセットする
+    _r = cv2.getTrackbarPos('R', 'Pen Parameter')
+    _g = cv2.getTrackbarPos('G', 'Pen Parameter')
+    _b = cv2.getTrackbarPos('B', 'Pen Parameter')
+    _thickness = cv2.getTrackbarPos('Thickness', 'Pen Parameter')
+    tool.setColor( (_b,_g,_r) )
+    tool.setThickness(_thickness)
+    
+    # 画像表示
+    cv2.imshow('image', canvas.getImg() )
+    
+    # キー入力受付
     ma.keyInput()
     
 # 線をつまんで編集できる、CLIPSTUDIOのベクターレイヤーを実装する
