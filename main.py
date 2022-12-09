@@ -174,6 +174,17 @@ class VectorPen(ToolOperater):
     def setThickness(self, thickness):
         self.thickness = thickness
         
+    def 入力点を間引く(self, pt):
+        # 間引きする
+        contour = np.array(pt, dtype=np.int32)
+        
+        epsilon = 0.0018 * cv2.arcLength(contour, False)
+        # epsilon = 0.0008 * cv2.arcLength(contour, False)
+        approx = cv2.approxPolyDP(contour, epsilon, False)
+        approx = np.squeeze(approx, 1)
+        
+        return approx.tolist()
+        
     def mouseMove(self, x, y):
         if not self.selectable_key_point: return
         
@@ -218,17 +229,11 @@ class VectorPen(ToolOperater):
         # 直前の画像に戻す。未確定の線を消した上でカーブの描画を行うため
         self.canvas.getCurrentLayer().線の描画前のイメージに戻す()
         
-        # self.points[2] = (self.points[2][0]+50, self.points[2][0] - 12)
+        # Douglas-Peuckerで入力点を間引く
+        thinned_out_points = self.入力点を間引く(self.points)
         
-        # 間引きする
-        contour = np.array(self.points, dtype = np.int32)
-        
-        epsilon = 0.0018 * cv2.arcLength(contour, False)
-        # epsilon = 0.0008 * cv2.arcLength(contour, False)
-        approx = cv2.approxPolyDP(contour, epsilon, False)
-        approx = np.squeeze(approx, 1)
-        
-        curve = cmr.CatmullRomSpline(approx.tolist())
+        # 間引いた点からカーブ生成
+        curve = cmr.CatmullRomSpline(thinned_out_points)
         curve.getKeyPoints()
         
         px = py = 0
