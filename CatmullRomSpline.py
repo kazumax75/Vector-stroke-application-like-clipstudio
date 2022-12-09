@@ -32,6 +32,20 @@ class CatmullRomSpline:
     def getKeyPoints(self):
         return self.points[1:-1, :]
         
+    def moveKeyPoint(self, index, x, y):
+        if index == 0:
+            # 先頭の制御点のとき
+            self.points[0] = [x, y]
+            self.points[1] = [x, y]
+        elif index == self.points.shape[0] - 2 - 1:
+            # 末尾の制御点のとき
+            self.points[index+1] = [x, y]
+            self.points[index+2] = [x, y]
+        else:
+            self.points[index + 1] = [x, y]
+            
+        return 
+        
     def plot(self, div): #補完した座標を返すジェネレータ
         length = len(self.points) - 2 - 1
         for i in range(length):
