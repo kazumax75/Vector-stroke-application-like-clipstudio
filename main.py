@@ -12,6 +12,21 @@ class ILayer(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, width, height) -> None:
         self.img = None
+        
+class InputHandler(metaclass=ABCMeta):
+    def __init__(self, tool):
+        self.tool = tool
+        self.lb_flag = False
+        self.rb_flag = False
+    
+    @abstractmethod
+    def mouseCallback(self, event, x, y, flags=None, param=None):pass
+    @abstractmethod
+    def keyInput(self):pass
+    @abstractmethod
+    def setTool(self, tool):
+        self.lb_flag = self.rb_flag = False
+        self.tool = tool
 class ToolOperater(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, canvas) -> None:
@@ -304,8 +319,7 @@ class VectorPen(ToolOperater):
         
         
 
-# class CVInput(InputHandler):
-class CVInput:
+class CVInput(InputHandler):
     def __init__(self, tool):
         self.tool: ToolOperater = tool
         self.lb_flag = False
@@ -348,9 +362,19 @@ class CVInput:
             pass
             
         elif key == ord('q'):
+            # qキーで終了
             cv2.destroyAllWindows()
             exit()
+            
+    def setTool(self, tool):
+        super().setTool(tool)
 
+if __name__ == '__main__':
+    color = (0,0,255)
+    thickness = 1
+    canvas = Canvas(1080, 800)
+    tool = VectorPen( canvas )
+    ma = CVInput(tool)
 
 color = (0,0,255)
 thickness = 1
