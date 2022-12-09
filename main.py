@@ -32,19 +32,19 @@ class ToolOperater(metaclass=ABCMeta):
     def __init__(self, canvas) -> None:
         self.canvas = canvas
     @abstractmethod
-    def LButtonDown(self): pass
+    def LButtonDown(self, x, y): pass
     @abstractmethod
-    def LButtonUp(self): pass
+    def LButtonUp(self, x, y): pass
     @abstractmethod
-    def LButtonMove(self):pass
+    def LButtonMove(self, x, y):pass
     @abstractmethod
-    def RButtonDown(self):pass
+    def RButtonDown(self, x, y):pass
     @abstractmethod
-    def RButtonUp(self):pass
+    def RButtonUp(self, x, y):pass
     @abstractmethod
-    def RButtonMove(self):pass
+    def RButtonMove(self, x, y):pass
     @abstractmethod
-    def mouseMove(self):pass
+    def mouseMove(self, x, y):pass
     
 class Canvas:
     def __init__(self, width, height) -> None:
@@ -53,14 +53,14 @@ class Canvas:
         self.currentIdx = 0
         self.layer: ILayer = []
         
-        # debug 現状1枚のベクタレイヤのみ取り扱う
+        # todo 現状1枚のベクタレイヤのみ取り扱う
         for i in range(1):
             self.layer.append( VectorLayer(self.width, self.height) )
         
         pass
     
     def getImg(self):
-        # debug 1枚目のレイヤの画像のみ返してる
+        # todo 1枚目のレイヤの画像のみ返してる
         return self.layer[0].img
         
     def getCurrentLayer(self):
@@ -77,7 +77,6 @@ class VectorLayer(ILayer):
         self.img = np.zeros((height, width, 3), dtype=np.uint8)
         self.img.fill(255)
         self.temp_img = self.img.copy()
-        self.prev_img = self.img.copy()
         self.stroke = []
         
         rows = width
@@ -281,23 +280,7 @@ class VectorPen(ToolOperater):
         self.canvas.getCurrentLayer().現在のイメージを記録する()
         
         return
-    
-    
-    def keyInput(self, key):
-        if key == ord('c'):
-            self.selectable_key_point = not self.selectable_key_point
-            
-            print("input c:", self.selectable_key_point)
-            pass
-        elif key == ord('w'):
-            
-            self.canvas.getCurrentLayer().全ストローク再描画()
-            pass
-        
-        elif key == ord('q'):
-            pass
-        
-        
+          
 
 class CVInput(InputHandler):
     def __init__(self, tool):
@@ -335,8 +318,6 @@ class CVInput(InputHandler):
 
     def keyInput(self, ):
         key = cv2.waitKey(1) & 0xFF
-        
-        self.tool.keyInput(key)
         
         if key == ord('c'):
             pass

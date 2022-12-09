@@ -2,35 +2,113 @@
 
 
 interface ILayer{
+    cv::Mat img
+    +ILayer(width, height)
 }
 interface ToolOperater{
+    -Canvas canvas
+    +InputHandler(ToolOperater tool)
+    +void LButdtonDown(int x, int y)
+    +void LButtonUp(int x, int y)
+    +void LButtonMove(int x, int y)
+    +void RButtonDown(int x, int y)
+    +void RButtonUp(int x, int y)
+    +void RButtonMove(int x, int y)
+    +void mouseMove(int x, int y)
+
 }
 interface InputHandler{
+    -ToolOperater tool
+    -boolean lb_flag
+    -boolean rb_flag
+    
+    +void mouseCallback()
+    +void keyInput()
+    +void setTool()
 }
 
+
 class Canvas{
+    -int width
+    -int height
+    -int currentIdx
+    -ILayer[] layer
+    
+    +cv::Mat getImg()
+    +cv::Mat getCurrentLayer()
 }
 
 class Stroke{
+    +CatmullRomSpline curve
+    +Tuple color
+    +int thickness
 }
 
 class VectorLayer implements ILayer {
+    -cv::Mat img
+    -cv::Mat temp_img
+    -Stroke[] stroke
+    -int[] selected_key_point
+    
+    +VectorLayer(width, height)
+    +void 現在のイメージを記録する()
+    +void 線の描画前のイメージに戻す()
+    +void カーブを追加(Stroke stroke)
+    +void 入力座標近くの制御点とカーブを取得(int x, int y)
+    +void 選択中のカーブ制御点を移動する(int x, int y)
+    +void removeCurve(int idx)
+    +void 全ストローク再描画(int div)
+    +void 制御点を表示する()
 }
 
 class VectorPen implements ToolOperater {
-}
-
-class CVInput implements InputHandler {
+    
+    -cv::Point[] points
+    -int[] color
+    -int thickness
+    -boolean selectable_key_point
+    
+    +VectorPen()
+    +void setColor()
+    +setThickness(self, thickness)
+    +入力点を間引く(self, pt)
+    +void mouseCallback()
+    +void keyInput()
+    +void setTool()
+    
     
 }
 
+class CVInput implements InputHandler {
+    -ToolOperater tool
+    -boolean lb_flag
+    -boolean rb_flag
+    
+    +void mouseCallback()
+    +void keyInput()
+    +void setTool()
+}
+
+class CatmullRomSpline{
+    -cv::Point[] _points
+    
+    
+    +CatmullRomSpline(cv::Point[] pts)
+    
+    -float __calcVal()
+    -float[] __getValue()
+    +cv::Point[] getKeyPoints()
+    +void moveKeyPoint(int index, int x, int y)
+    +plot(int div)
+}
 
 Canvas "1..*" *-- ILayer
 InputHandler "1" *-- ToolOperater
 ToolOperater "1" *-- Canvas
 VectorLayer "0..*" *-- Stroke
 
-
+VectorPen "1" *-- CatmullRomSpline
+Stroke "1" *-- CatmullRomSpline
 
 
 
