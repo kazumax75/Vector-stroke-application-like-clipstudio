@@ -72,11 +72,6 @@ class Stroke:
     color: Tuple[int, int, int]
     thickness: int
     
-@dataclasses.dataclass
-class PointMap:
-    curve_index: int
-    points: List[Tuple[int, int]]
-    
 class VectorLayer(ILayer):
     def __init__(self, width, height) -> None:
         self.img = np.zeros((height, width, 3), dtype=np.uint8)
@@ -87,11 +82,7 @@ class VectorLayer(ILayer):
         
         rows = width
         cols = height
-        self.map = [[ [] for j in range(cols)] for i in range(rows)]
-        
         self.selected_key_point = None
-        print("width ", len(self.map))
-        print("height", len(self.map[0]))
     
     def 現在のイメージを記録する(self):
         self.temp_img = self.img.copy()
@@ -101,8 +92,6 @@ class VectorLayer(ILayer):
     
     def カーブを追加(self, stroke):
         self.stroke.append(stroke)
-        for pt in stroke.curve.getKeyPoints():
-            self.map[pt[0]][pt[1]].append( PointMap( len(self.stroke)-1, pt)  )
             
         return
         
