@@ -90,8 +90,8 @@ class VectorLayer(ILayer):
         self.map = [[ [] for j in range(cols)] for i in range(rows)]
         
         self.selected_key_point = None
-        print("w", len(self.map))
-        print("h", len(self.map[0]))
+        print("width ", len(self.map))
+        print("height", len(self.map[0]))
     
     def 現在のイメージを記録する(self):
         self.temp_img = self.img.copy()
@@ -261,8 +261,7 @@ class VectorPen(ToolOperater):
                 self.canvas.getCurrentLayer().img , 
                 (px, py), 
                 (_x, _y), 
-                self.color, 
-                # (255,9,0),
+                self.color,
                 thickness=self.thickness, 
                 lineType=cv2.LINE_8
             )
@@ -270,11 +269,7 @@ class VectorPen(ToolOperater):
             
             
         self.canvas.getCurrentLayer().現在のイメージを記録する()
-        # # debug 制御点表示
-        # for pt in curve.getKeyPoints():cv2.circle(self.canvas.getCurrentLayer().img,center=(pt[0], pt[1]),radius=3,color=(0, 0, 0),thickness=1,lineType=cv2.LINE_4,shift=0)
         
-        
-        # self.canvas.getCurrentLayer().stroke.append( Stroke(curve, self.color, self.thickness) )
         self.canvas.getCurrentLayer().カーブを追加( Stroke(curve, self.color, self.thickness) )
         self.canvas.getCurrentLayer().制御点を表示する()
         
@@ -284,23 +279,19 @@ class VectorPen(ToolOperater):
         
     
     def RButtonDown(self, x, y):
-        # self.canvas.getCurrentLayer().線の描画前のイメージに戻す()
-        # self.canvas.getCurrentLayer().選択中のカーブ制御点を移動する(x, y)
-        # self.canvas.getCurrentLayer().全ストローク再描画()
-
-        pass
+        return
     
     def RButtonMove(self, x, y):
-        # self.canvas.getCurrentLayer().線の描画前のイメージに戻す()
         self.canvas.getCurrentLayer().選択中のカーブ制御点を移動する(x, y)
-        self.canvas.getCurrentLayer().全ストローク再描画(div=7)
+        self.canvas.getCurrentLayer().全ストローク再描画(div=7)# 軽量化のため分割数を減らす
         
-        pass
+        return
+        
     def RButtonUp(self, x, y):
         self.canvas.getCurrentLayer().全ストローク再描画()
         self.canvas.getCurrentLayer().現在のイメージを記録する()
         
-        pass
+        return
     
     
     def keyInput(self, key):
@@ -376,39 +367,28 @@ if __name__ == '__main__':
     tool = VectorPen( canvas )
     ma = CVInput(tool)
 
-color = (0,0,255)
-thickness = 1
-canvas = Canvas(1080, 800)
-tool = VectorPen( canvas )
-ma = CVInput(tool)
+    cv2.namedWindow('image')
+    cv2.setMouseCallback('image', ma.mouseCallback)
 
-cv2.namedWindow('image')
-cv2.setMouseCallback('image', ma.mouseCallback)
+    def nothing(x):
+        pass
+    cv2.namedWindow('Pen Parameter', cv2.WINDOW_NORMAL)
+    cv2.createTrackbar('R', 'Pen Parameter', color[2], 255, nothing)
+    cv2.createTrackbar('G', 'Pen Parameter', color[1], 255, nothing)
+    cv2.createTrackbar('B', 'Pen Parameter', color[0], 255, nothing)
+    cv2.createTrackbar('Thickness', 'Pen Parameter', thickness, 20, nothing)
 
-def nothing(x):
-    pass
-cv2.namedWindow('Pen Parameter', cv2.WINDOW_NORMAL)
-cv2.createTrackbar('R', 'Pen Parameter', color[2], 255, nothing)
-cv2.createTrackbar('G', 'Pen Parameter', color[1], 255, nothing)
-cv2.createTrackbar('B', 'Pen Parameter', color[0], 255, nothing)
-cv2.createTrackbar('Thickness', 'Pen Parameter', thickness, 20, nothing)
-
-while(1):
-    
-    # トラックバーの値をペンにセットする
-    _r = cv2.getTrackbarPos('R', 'Pen Parameter')
-    _g = cv2.getTrackbarPos('G', 'Pen Parameter')
-    _b = cv2.getTrackbarPos('B', 'Pen Parameter')
-    _thickness = cv2.getTrackbarPos('Thickness', 'Pen Parameter')
-    tool.setColor( (_b,_g,_r) )
-    tool.setThickness(_thickness)
-    
-    # 画像表示
-    cv2.imshow('image', canvas.getImg() )
-    
-    # キー入力受付
-    ma.keyInput()
-    
-# 線をつまんで編集できる、CLIPSTUDIOのベクターレイヤーを実装する
-
-# 
+    while(1):
+        # トラックバーの値をペンにセットする
+        _r = cv2.getTrackbarPos('R', 'Pen Parameter')
+        _g = cv2.getTrackbarPos('G', 'Pen Parameter')
+        _b = cv2.getTrackbarPos('B', 'Pen Parameter')
+        _thickness = cv2.getTrackbarPos('Thickness', 'Pen Parameter')
+        tool.setColor( (_b,_g,_r) )
+        tool.setThickness(_thickness)
+        
+        # 画像表示
+        cv2.imshow('image', canvas.getImg() )
+        
+        # キー入力受付
+        ma.keyInput()
