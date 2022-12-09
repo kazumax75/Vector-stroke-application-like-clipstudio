@@ -1,0 +1,37 @@
+@startuml
+
+
+interface ILayer{
+}
+interface ToolOperater{
+}
+interface InputHandler{
+}
+
+class Canvas{
+}
+
+class Stroke{
+}
+
+class VectorLayer implements ILayer {
+}
+
+class VectorPen implements ToolOperater {
+}
+
+class CVInput implements InputHandler {
+    
+}
+
+
+Canvas "1..*" *-- ILayer
+InputHandler "1" *-- ToolOperater
+ToolOperater "1" *-- Canvas
+VectorLayer "0..*" *-- Stroke
+
+
+
+
+
+@enduml
