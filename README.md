@@ -5,6 +5,8 @@ This application allows you to edit strokes made by mouse or pen tablet input.
 
 ## Description
 
+[描画した線をつまんで編集できる、CLIP STUDIOのようなベクターレイヤーを実装する](https://qiita.com/Kazuma_Kikuya/items/154f4c86ce7a864b637a)
+
 マウスやペンタブレットで入力されたトラックポイントをDouglas−Peuckerアルゴリズムで間引き、残った点をキーポイントとしたCatmull–Rom Spline曲線でストローク描画しています。
 キーポイント上で右ドラッグすることでストロークを編集できます。
 別ウィンドウのトラックバーで線の色や太さを変更できます。
