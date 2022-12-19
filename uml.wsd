@@ -2,7 +2,7 @@
 
 
 interface ILayer{
-    cv::Mat img
+    -cv::Mat img
     +ILayer(width, height)
 }
 interface ToolOperater{
@@ -91,10 +91,7 @@ class CVInput implements InputHandler {
 
 class CatmullRomSpline{
     -cv::Point[] _points
-    
-    
     +CatmullRomSpline(cv::Point[] pts)
-    
     -float __calcVal()
     -float[] __getValue()
     +cv::Point[] getKeyPoints()
@@ -106,10 +103,7 @@ Canvas "1..*" *-- ILayer
 InputHandler "1" *-- ToolOperater
 ToolOperater "1" *-- Canvas
 VectorLayer "0..*" *-- Stroke
-
 VectorPen "1" *-- CatmullRomSpline
 Stroke "1" *-- CatmullRomSpline
-
-
 
 @enduml
